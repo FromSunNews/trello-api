@@ -35,6 +35,22 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const verifyAccount = async (req, res, next) => {
+  const condition = Joi.object({
+    email: Joi.string().required().pattern(EMAIL_RULE).message('Email is invalid'),
+    token: Joi.string().required()
+  })
+  try {
+    await condition.validateAsync(req.body, { abortEarly: false })
+    next()
+  } catch (error) {
+    res.status(HttpStatusCode.BAD_REQUEST).json({
+      errors: new Error(error).message
+    })
+  }
+ }
+ 
 export const UserValidation = {
-  createNew
+  createNew,
+  verifyAccount
 }
