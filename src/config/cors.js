@@ -17,5 +17,9 @@ export const corsOptions = {
     return callback(new Error(`${origin} not allowed by CORS.`))
     
   },
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  credentials: true // CORS sẽ cho phép nhận cookies
+ 
+
+
 }

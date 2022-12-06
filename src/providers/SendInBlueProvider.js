@@ -9,10 +9,15 @@ const apiKey = defaultClient.authentications['api-key']
 apiKey.apiKey = env.SENDINBLUE_API_KEY
  
 const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi()
+// const adminSender = {
+//  email: 'ptu2747@gmail.com',
+//  name: 'FromSunNews'
+// } 
+
 const adminSender = {
- email: 'quanlightning17@gmail.com', // Email tai khoan tao tren sendinblue
- name: 'trungquandev'
-}
+  email: 'quanlightning17@gmail.com', // Email tai khoan tao tren sendinblue
+  name: 'trungquandev'
+ }
 
 const sendEmail = async (toEmail, subject, htmlContent)=>{
   try {

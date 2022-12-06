@@ -1,9 +1,9 @@
 import { BoardModel } from '*/models/board.model'
 import { cloneDeep } from 'lodash'
-
-const createNew = async (data) => {
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_CURRENT_PAGE} from '*/utilities/constants'
+const createNew = async (data, userId) => {
   try {
-    const createdBoard = await BoardModel.createNew(data)
+    const createdBoard = await BoardModel.createNew(data, userId)
     const getNewBoard = await BoardModel.findOneById(createdBoard.insertedId.toString())
     // push notification
     // do something...vv
@@ -15,7 +15,7 @@ const createNew = async (data) => {
   }
 }
 
-const getFullBoard = async (boardId) => {
+const getFullBoard = async (boardId, userId) => {
   try {
     const board = await BoardModel.getFullBoard(boardId)
     if (!board) {
@@ -23,6 +23,20 @@ const getFullBoard = async (boardId) => {
     }
 
     const transformBoard = cloneDeep(board)
+
+    // Để tạm 2 dòng if ở đây vì lúc dev tạo data cho board có thể đang thiếu, nếu chuẩn data thì luôn luôn có ownerIds và memberIds với ít nhất là Array rỗng.
+   if (!transformBoard.ownerIds) transformBoard['ownerIds'] = []
+   if (!transformBoard.memberIds) transformBoard['memberIds'] = []
+  // ktr có phải chủ hay thành viên hay không
+   if (!transformBoard.ownerIds.map(i => i.toString()).includes(userId) &&
+     !transformBoard.memberIds.map(i => i.toString()).includes(userId))
+   {
+     throw new Error('You have no right to access this board!')
+   }
+
+
+
+    console.log(transformBoard)
     // Filter deteled columns
     transformBoard.columns = transformBoard.columns.filter(column => !column._destroy)
 
@@ -57,8 +71,28 @@ const update = async (id, data) => {
   }
 }
 
+const getListBoards = async (userId, currentPage, itemsPerPage, queryFilters) => {
+  try {
+    if (!currentPage) currentPage = DEFAULT_CURRENT_PAGE
+    if (!itemsPerPage) itemsPerPage = DEFAULT_ITEMS_PER_PAGE
+
+    const results = await BoardModel.getListBoards(
+      userId,
+      parseInt(currentPage),
+      parseInt(itemsPerPage),
+      queryFilters
+    )
+
+    return results
+    
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const BoardService = {
   createNew,
   update,
-  getFullBoard
+  getFullBoard,
+  getListBoards
 }

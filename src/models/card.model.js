@@ -14,6 +14,8 @@ const cardCollectionSchema = Joi.object({
   _destroy: Joi.boolean().default(false)
 })
 
+const INVALID_UPDATE_FILEDS = ['_id','createdAt','boardId']
+
 const validateSchema = async (data) => {
   return await cardCollectionSchema.validateAsync(data, { abortEarly: false })
 }
@@ -45,7 +47,13 @@ const createNew = async (data) => {
 const update = async (id, data) => {
   try {
     const updateData = { ...data }
-    if (data.boardId) updateData.boardId = ObjectId(data.boardId)
+
+    Object.keys(updateData).forEach(fieldName => {
+      if(INVALID_UPDATE_FILEDS.includes(fieldName)){
+        delete updateData[fieldName]
+      }
+    })
+    
     if (data.columnId) updateData.columnId = ObjectId(data.columnId)
 
     const result = await getDB().collection(cardCollectionName).findOneAndUpdate(
