@@ -1,5 +1,8 @@
 import { CardModel } from '*/models/card.model'
 import { ColumnModel } from '*/models/column.model'
+import { CloudinaryProvider } from '*/providers/CloudinaryProvider'
+
+import { ObjectId } from 'mongodb'
 
 const createNew = async (data) => {
   try {
@@ -13,15 +16,43 @@ const createNew = async (data) => {
     throw new Error(error)
   }
 }
-
-const update = async (id, data) => {
+// User info lấy từ token, mà token mình đang lưu mỗi email với _id vào
+const update = async (cardId, data, userInfo, cardCoverFile) => {
   try {
     const updateData = {
       ...data,
       updatedAt: Date.now()
     }
-    if (updateData._id) delete updateData._id
-    const updatedCard = await CardModel.update(id, updateData)
+    
+    let updatedCard = {}
+
+    if (cardCoverFile) {
+      // update card cover
+      // Upload file lên cloudinary
+      const uploadResult = await CloudinaryProvider.streamUpload(cardCoverFile.buffer, 'card-covers')
+      updatedCard = await CardModel.update(cardId, {
+        cover: uploadResult.secure_url
+      })
+
+    } else if (updateData.newComment) {
+      // update comment in card
+      const comment = {
+        ...updateData.newComment,
+        userId: ObjectId(userInfo._id),
+        userEmail: userInfo.email,
+        createdAt: Date.now()
+      }
+      // console.log(comment)
+
+      updatedCard = await CardModel.pushNewComment(cardId, comment)
+
+    } else if (updateData.incomingMember) {
+      // update member in card 
+      updatedCard = await CardModel.updateMembers(cardId, updateData.incomingMember)
+    } else {
+      // update card title, description...vv
+      updatedCard = await CardModel.update(cardId, updateData)
+    }
 
     return updatedCard
   } catch (error) {

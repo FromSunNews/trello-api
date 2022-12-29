@@ -5,7 +5,7 @@ import { UserValidation } from '*/validations/user.validation'
 import {AuthMiddleware} from '*/middlewares/auth.middleware'
 import {UploadMiddleware} from '*/middlewares/upload.middleware'
 
-console.log(UploadMiddleware)
+// console.log(UploadMiddleware)
 const router = express.Router()
 
 router.route('/sign_up')
