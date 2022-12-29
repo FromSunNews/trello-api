@@ -5,6 +5,7 @@ import { ColumnModel } from './column.model'
 import { CardModel } from './card.model'
 import { UserModel } from './user.model'
 import { pagingSkipValue } from '*/utilities/algorithms'
+import { cloneDeep } from 'lodash'
 // Define Board collection
 const boardCollectionName = 'boards'
 const boardCollectionSchema = Joi.object({
@@ -20,7 +21,7 @@ const boardCollectionSchema = Joi.object({
   _destroy: Joi.boolean().default(false)
 })
 
-const INVALID_UPDATE_FILEDS = ['_id','createdAt']
+const INVALID_UPDATE_FILEDS = ['_id','createdAt', 'currentUserId', 'members', 'owners', 'totalUsers']
 
 
 const validateSchema = async (data) => {
@@ -54,7 +55,34 @@ const createNew = async (data, userId) => {
 
 const update = async (id, data) => {
   try {
-    const updateData = { ...data }
+    
+    let updateData = { ...data }
+    
+    const ownerIds = cloneDeep(updateData.ownerIds)
+    let newOwnerIds = []
+
+    if (ownerIds) {
+      ownerIds.forEach( ownerId => {
+        ownerId = new ObjectId(ownerId) 
+        newOwnerIds.push(ownerId)
+      })
+     }
+
+    const memberIds = cloneDeep(updateData.memberIds)
+    let newMemberIds = []
+    
+     if (memberIds) {
+      memberIds.forEach( memberId => {
+        memberId = new ObjectId(memberId) 
+        newMemberIds.push(memberId)
+      })
+     }
+
+    updateData = {
+      ...updateData,
+      ownerIds: newOwnerIds,
+      memberIds: newMemberIds
+    }
 
     Object.keys(updateData).forEach(fieldName => {
       if(INVALID_UPDATE_FILEDS.includes(fieldName)){
@@ -91,6 +119,21 @@ const pushColumnOrder = async (boardId, columnId) => {
     throw new Error(error)
   }
 }
+
+const pushMembers = async (boardId, userId) => {
+  try {
+    const result = await getDB().collection(boardCollectionName).findOneAndUpdate(
+      { _id: ObjectId(boardId) },
+      { $push: { memberIds: ObjectId(userId) } },
+      { returnDocument: 'after' }
+    )
+
+    return result.value
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 
 const getFullBoard = async (boardId) => {
   try {
@@ -157,7 +200,7 @@ const getListBoards = async (userId, currentPage, itemsPerPage, queryFilters) =>
     }
 
 
-    console.log('queryFilters', queryFilters)
+    // console.log('queryFilters', queryFilters)
 
     const query = await getDB().collection(boardCollectionName).aggregate(
       [
@@ -193,5 +236,7 @@ export const BoardModel = {
   pushColumnOrder,
   getFullBoard,
   findOneById,
-  getListBoards
+  getListBoards,
+  boardCollectionName,
+  pushMembers
 }

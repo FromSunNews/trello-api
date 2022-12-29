@@ -1,6 +1,7 @@
 import { BoardModel } from '*/models/board.model'
 import { cloneDeep } from 'lodash'
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_CURRENT_PAGE} from '*/utilities/constants'
+import { ObjectId } from 'mongodb'
 const createNew = async (data, userId) => {
   try {
     const createdBoard = await BoardModel.createNew(data, userId)
@@ -36,7 +37,7 @@ const getFullBoard = async (boardId, userId) => {
 
 
 
-    console.log(transformBoard)
+    // console.log(transformBoard)
     // Filter deteled columns
     transformBoard.columns = transformBoard.columns.filter(column => !column._destroy)
 
@@ -60,9 +61,7 @@ const update = async (id, data) => {
       ...data,
       updatedAt: Date.now()
     }
-    if (updateData._id) delete updateData._id
-    if (updateData.columns) delete updateData.columns
-
+   
     const updatedBoard = await BoardModel.update(id, updateData)
 
     return updatedBoard
