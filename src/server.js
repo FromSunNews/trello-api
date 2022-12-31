@@ -22,6 +22,8 @@ import {
 import { 
   updateCardSocket
 } from '*/sockets/userInteractCardSocket'
+import { createdNewLabelSocket, updatedCheckBoxLabelSocket, updatedLabelSocket } from './sockets/userInteractLabelSocket'
+import { updatedBoardSocket } from './sockets/userInteractBoardSocket'
 
 connectDB()
   .then(() => console.log('Connected successfully to database server!'))
@@ -70,6 +72,15 @@ const bootServer = () => {
     updateColumnSocket(socket)
     // xử lý hiển thị cập nhật card trong board và activeCardModal 
     updateCardSocket(socket)
+
+    createdNewLabelSocket(socket)
+
+    updatedLabelSocket(socket)
+
+    updatedCheckBoxLabelSocket(socket)
+
+    updatedBoardSocket(socket)
+  
   })
 
 
