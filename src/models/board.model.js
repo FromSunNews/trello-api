@@ -4,6 +4,7 @@ import { getDB } from '*/config/mongodb'
 import { ColumnModel } from './column.model'
 import { CardModel } from './card.model'
 import { UserModel } from './user.model'
+import { LabelModel } from './label.model'
 import { pagingSkipValue } from '*/utilities/algorithms'
 import { cloneDeep } from 'lodash'
 // Define Board collection
@@ -14,10 +15,13 @@ const boardCollectionSchema = Joi.object({
   description: Joi.string().required().min(3).max(256).trim(),
   ownerIds: Joi.array().items(Joi.string()).default([]),
   memberIds: Joi.array().items(Joi.string()).default([]),
-
+  labelIds: Joi.array().items(Joi.string()).default([]),
+  
   columnOrder: Joi.array().items(Joi.string()).default([]),
   createdAt: Joi.date().timestamp().default(Date.now()),
   updatedAt: Joi.date().timestamp().default(null),
+
+  _expandLabels: Joi.boolean().default(false),
   _destroy: Joi.boolean().default(false)
 })
 
@@ -58,31 +62,42 @@ const update = async (id, data) => {
     
     let updateData = { ...data }
     
-    const ownerIds = cloneDeep(updateData.ownerIds)
-    let newOwnerIds = []
-
-    if (ownerIds) {
-      ownerIds.forEach( ownerId => {
+    
+    if (updateData.ownerIds) {
+      let newOwnerIds = []
+      
+      updateData.ownerIds.forEach( ownerId => {
         ownerId = new ObjectId(ownerId) 
         newOwnerIds.push(ownerId)
       })
+
+      updateData.ownerIds = newOwnerIds
+
      }
 
-    const memberIds = cloneDeep(updateData.memberIds)
-    let newMemberIds = []
-    
-     if (memberIds) {
-      memberIds.forEach( memberId => {
+     
+     if (updateData.memberIds) {
+      let newMemberIds = []
+
+      updateData.memberIds.forEach( memberId => {
         memberId = new ObjectId(memberId) 
         newMemberIds.push(memberId)
       })
+
+      updateData.memberIds = newMemberIds
+
      }
 
-    updateData = {
-      ...updateData,
-      ownerIds: newOwnerIds,
-      memberIds: newMemberIds
-    }
+     
+     if (updateData.labelIds) {
+      let newLabelIds = []
+       
+      updateData.labelIds.forEach( labelId => {
+        labelId = new ObjectId(labelId) 
+        newLabelIds.push(labelId)
+      })
+      updateData.labelIds = newLabelIds
+     }
 
     Object.keys(updateData).forEach(fieldName => {
       if(INVALID_UPDATE_FILEDS.includes(fieldName)){
@@ -171,6 +186,12 @@ const getFullBoard = async (boardId) => {
         pipeline: [
           { $project: { 'password': 0, 'verifyToken': 0 } }
         ]
+      } },
+      { $lookup: {
+        from: LabelModel.labelCollectionName,
+        localField: 'labelIds', // array of onjectid
+        foreignField: '_id',
+        as: 'labels'
       } }
     ]).toArray()
 
@@ -230,6 +251,20 @@ const getListBoards = async (userId, currentPage, itemsPerPage, queryFilters) =>
   }
 }
 
+const pushLabel = async (boardId, labelId) => {
+  try {
+    const result = await getDB().collection(boardCollectionName).findOneAndUpdate(
+      { _id: ObjectId(boardId) },
+      { $push: { labelIds: ObjectId(labelId) } },
+      { returnDocument: 'after' }
+    )
+
+    return result.value
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const BoardModel = {
   createNew,
   update,
@@ -238,5 +273,6 @@ export const BoardModel = {
   findOneById,
   getListBoards,
   boardCollectionName,
-  pushMembers
+  pushMembers,
+  pushLabel
 }

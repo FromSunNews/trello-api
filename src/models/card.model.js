@@ -1,6 +1,7 @@
 import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { getDB } from '*/config/mongodb'
+import { cloneDeep } from 'lodash'
 
 // Define Card collection
 const cardCollectionName = 'cards'
@@ -19,6 +20,7 @@ const cardCollectionSchema = Joi.object({
     createdAt: Joi.date().timestamp()  // vì chỗ này sau sẽ dùng hàm $push nên nó không ăn giá trị default giống hàm insertOne được
   }).default([]),
   cover: Joi.string().default(null),
+  labelIds: Joi.array().items(Joi.string()).default([]),
   createdAt: Joi.date().timestamp().default(Date.now()),
   updatedAt: Joi.date().timestamp().default(null),
   _destroy: Joi.boolean().default(false)
@@ -58,12 +60,12 @@ const update = async (id, data) => {
   try {
     
     const updateData = { ...data }
-
     
     if ( updateData.comments ) {
       
       let newComments = []
 
+      // cật nhật trường userId trong comment thành objectId bởi vì bây giờ nó là string
       updateData.comments.forEach( comment => {
         comment = {
           ...comment,
@@ -75,9 +77,18 @@ const update = async (id, data) => {
       updateData.comments = newComments
     }
 
-    console.log("goi ham update card", updateData)
+    
+    if (updateData.labelIds) {
+      let newLabelIds = []
+      
+      updateData.labelIds.forEach(labelId => {
+        labelId = new ObjectId(labelId) 
+        newLabelIds.push(labelId)
+      })
+      updateData.labelIds = newLabelIds
+    }
 
-
+    
     Object.keys(updateData).forEach(fieldName => {
       if(INVALID_UPDATE_FILEDS.includes(fieldName)){
         delete updateData[fieldName]
@@ -171,6 +182,21 @@ const updateManyComments = async (userInfo) => {
   }
 }
 
+const pushLabel = async (cardId, labelId) => {
+  
+  try {
+    const result = await getDB().collection(cardCollectionName).findOneAndUpdate(
+      { _id: ObjectId(cardId) },
+      { $push: { labelIds: ObjectId(labelId) } },
+      { returnDocument: 'after' }
+    )
+
+    return result.value
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const CardModel = {
   cardCollectionName,
   createNew,
@@ -179,5 +205,6 @@ export const CardModel = {
   findOneById,
   pushNewComment,
   updateMembers,
-  updateManyComments
+  updateManyComments,
+  pushLabel
 }
