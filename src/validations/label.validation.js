@@ -3,9 +3,11 @@ import { HttpStatusCode } from '*/utilities/constants'
 
 const createNew = async (req, res, next) => {
   const condition = Joi.object({
+    title: Joi.string().required().min(1).max(50).trim(),
     boardId: Joi.string().required(),
-    columnId: Joi.string().required(),
-    title: Joi.string().required().min(5).max(50).trim()
+    createAtCard: Joi.string().required(),
+    backgroundColor: Joi.string().required(),
+    primaryColor: Joi.string().required()
   })
   try {
     await condition.validateAsync(req.body, { abortEarly: false })
@@ -20,9 +22,8 @@ const createNew = async (req, res, next) => {
 const update = async (req, res, next) => {
   const condition = Joi.object({
     title: Joi.string().min(1).max(50).trim(),
-    boardId: Joi.string(),
-    columnId: Joi.string(),
-    labelIds: Joi.array().items(Joi.string())
+    backgroundColor: Joi.string(),
+    primaryColor: Joi.string()
   })
   try {
     await condition.validateAsync(req.body, {
@@ -37,7 +38,7 @@ const update = async (req, res, next) => {
   }
 }
 
-export const CardValidation = {
+export const LabelValidation = {
   createNew,
   update
 }
