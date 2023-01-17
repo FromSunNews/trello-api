@@ -20,9 +20,21 @@ const cardCollectionSchema = Joi.object({
     createdAt: Joi.date().timestamp()  // vì chỗ này sau sẽ dùng hàm $push nên nó không ăn giá trị default giống hàm insertOne được
   }).default([]),
   cover: Joi.string().default(null),
+
   labelIds: Joi.array().items(Joi.string()).default([]),
+  checklistIds: Joi.array().items(Joi.string()).default([]),
   createdAt: Joi.date().timestamp().default(Date.now()),
   updatedAt: Joi.date().timestamp().default(null),
+  
+  dates: Joi.object().keys({
+    startDate: Joi.date().timestamp().default(null),
+    endDate: Joi.date().timestamp().default(null),
+    endTime: Joi.date().timestamp().default(null),
+    reminderTime: Joi.date().timestamp().default(null),
+    _finished: Joi.boolean().default(false),
+    _followed: Joi.boolean().default(false)
+  }).default({}), 
+
   _destroy: Joi.boolean().default(false)
 })
 
@@ -77,16 +89,20 @@ const update = async (id, data) => {
       updateData.comments = newComments
     }
 
-    
-    if (updateData.labelIds) {
-      let newLabelIds = []
-      
-      updateData.labelIds.forEach(labelId => {
-        labelId = new ObjectId(labelId) 
-        newLabelIds.push(labelId)
-      })
-      updateData.labelIds = newLabelIds
-    }
+    const fieldsConvertToObjectId = ['labelIds', 'checklistIds']
+    fieldsConvertToObjectId.forEach(key => {
+      if (updateData[key]) {
+        let newArray = []
+        
+        updateData[key].forEach( element => {
+          element = new ObjectId(element) 
+          newArray.push(element)
+        })
+  
+        updateData[key] = newArray
+  
+      }
+    })
 
     
     Object.keys(updateData).forEach(fieldName => {
@@ -187,7 +203,22 @@ const pushLabel = async (cardId, labelId) => {
   try {
     const result = await getDB().collection(cardCollectionName).findOneAndUpdate(
       { _id: ObjectId(cardId) },
-      { $push: { labelIds: ObjectId(labelId) } },
+      { $push: { labelIds: { $each: [ObjectId(labelId)], $position: 0 } } },
+      { returnDocument: 'after' }
+    )
+
+    return result.value
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const pushCheckList = async (cardId, checklistId) => {
+  
+  try {
+    const result = await getDB().collection(cardCollectionName).findOneAndUpdate(
+      { _id: ObjectId(cardId) },
+      { $push: { checklistIds: { $each: [ObjectId(checklistId)], $position: 0 } } },
       { returnDocument: 'after' }
     )
 
@@ -206,5 +237,6 @@ export const CardModel = {
   pushNewComment,
   updateMembers,
   updateManyComments,
-  pushLabel
+  pushLabel,
+  pushCheckList
 }
