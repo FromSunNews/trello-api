@@ -56,6 +56,7 @@ const update = async (cardId, data, userInfo, cardCoverFile) => {
 
     return updatedCard
   } catch (error) {
+    console.log("🚀 ~ file: card.service.js:59 ~ update ~ error", error)
     throw new Error(error)
   }
 }

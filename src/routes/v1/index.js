@@ -6,6 +6,9 @@ import { cardRoutes } from './card.route'
 import { userRoutes } from './user.route'
 import { invitationRoutes } from './invitation.route'
 import { labelRoutes } from './label.route'
+import { checklistRoutes } from './checklist.route'
+import { todoRoutes } from './todo.route'
+
 const router = express.Router()
 
 /**
@@ -30,5 +33,11 @@ router.use('/invitations', invitationRoutes)
 
 /** Label APIs */
 router.use('/labels', labelRoutes)
+
+/** Checklist APIs */
+router.use('/checklists', checklistRoutes)
+
+/** Checklist APIs */
+router.use('/todos', todoRoutes)
 
 export const apiV1 = router

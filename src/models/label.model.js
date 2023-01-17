@@ -15,7 +15,7 @@ const labelCollectionSchema = Joi.object({
   _destroy: Joi.boolean().default(false)
 })
  
-const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt', 'createAtCard']
  
 const validateSchema = async (data) => {
   return await labelCollectionSchema.validateAsync(data, { abortEarly: false })
